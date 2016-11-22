@@ -10,9 +10,9 @@ Overview of what is provided
 
  - WiFi (IEEE 802.11n) LDPC code construction
  
- - Encoding by backsubstitution for WiFi LDPC codes
+ - Encoding by back-substitution for WiFi LDPC codes
 
- - BP Decoding (including min-sum) 
+ - Iterative belief propagation (BP) Decoding (including min-sum) 
 
  - AWGN simulations for BPSK, 4-ASK, 8-ASK (equivalently QPSK, 16-QAM, and 64-QAM)
 
@@ -63,7 +63,7 @@ The run time comparison is as follows (run on a single macbook pro 2015):
   </tr>
 </table>
 
-The above numbers are based on 20 iterations of the decoder *without* early termination. So, typically, one should see much better performance.
+The above numbers are based on 20 iterations of the BP decoder *without* early termination. So, typically, one should see much better performance.
 
 Code Interface
 ------
