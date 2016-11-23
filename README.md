@@ -21,11 +21,11 @@ Overview of what is provided
 Decoding performance
 ------
 
-<img src="wifi_ldpc_qpsk.png" alt="WiFi LDPC performance over QPSK" width="400"/>
+<img src="results/wifi_ldpc_qpsk.png" alt="WiFi LDPC performance over QPSK" width="400"/>
 
-<img src="wifi_ldpc_16qam.png" alt="WiFi LDPC performance over 16-QAM" width="400"/>
+<img src="results/wifi_ldpc_16qam.png" alt="WiFi LDPC performance over 16-QAM" width="400"/>
 
-<img src="wifi_ldpc_64qam.png" alt="WiFi LDPC performance over 64-QAM" width="400"/>
+<img src="results/wifi_ldpc_64qam.png" alt="WiFi LDPC performance over 64-QAM" width="400"/>
 
 The figure above shows the performance of LDPC codes for various rates and constellation choices over AWGN channel.
 
