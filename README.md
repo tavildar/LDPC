@@ -10,9 +10,9 @@ Overview of what is provided
 
  - WiFi (IEEE 802.11n) LDPC code construction
  
- - Encoding by backsubstitution for WiFi LDPC codes
+ - Encoding by back-substitution for WiFi LDPC codes
 
- - BP Decoding (including min-sum) 
+ - Iterative belief propagation (BP) Decoding (including min-sum) 
 
  - AWGN simulations for BPSK, 4-ASK, 8-ASK (equivalently QPSK, 16-QAM, and 64-QAM)
 
@@ -29,7 +29,7 @@ Decoding performance
 
 The figure above shows the performance of LDPC codes for various rates and constellation choices over AWGN channel.
 
-The results are based on 50K runs. 
+The results are using LdpcC code, and are based on 50K runs. 
 
 Runtime performance C and MATLAB
 -----
@@ -63,7 +63,7 @@ The run time comparison is as follows (run on a single macbook pro 2015):
   </tr>
 </table>
 
-The above numbers are based on 20 iterations of the decoder *without* early termination. So, typically, one should see much better performance.
+The above numbers are based on 20 iterations of the BP decoder *without* early termination. So, typically, one should see much better performance.
 
 Code Interface
 ------
@@ -71,7 +71,7 @@ Code Interface
 The key code is in class LdpcCode (C and MATLAB). The interface to this class is as follows:
 
  - **load_wifi_ldpc**
-	 - Input: block_length, rate (or rate_index)
+	 - Input: block_length (= N), rate (or rate_index)
 	 - Output: None 
 	 - Function: creates WiFi LDPC code with specified parameters. 
 
@@ -82,7 +82,7 @@ The key code is in class LdpcCode (C and MATLAB). The interface to this class is
 
  - **decode**
 	 - Input:  llr vector, max iterations, min_sum algorithm  	
-	 - Output: decoded info bits
+	 - Output: decoded codeword (for WiFi codes, first K bits are the information bits)
 	 - 	Function: BP decoder (see [Richardson-Urbanke](https://www.amazon.com/Modern-Coding-Theory-Tom-Richardson/dp/0521852293))
 	 
 > Note that for speed up of simulation, it is assumed in the main file that if a given run (as in info bit and noise realizations) is decoded for a lower EbNo value, then it will be decoded for a higher EbNo value. 
