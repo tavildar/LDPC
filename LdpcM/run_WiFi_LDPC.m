@@ -6,7 +6,7 @@ clear all;
 max_runs = 100;
 max_decode_iterations = 20;
 ldpc_code = LDPCCode(0, 0);
-min_sum = 1;
+min_sum = 0;
 n_0 = 1/2;
 
 
