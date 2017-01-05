@@ -1,6 +1,6 @@
 classdef LDPCCode < handle
     % Implements LDPC functionality
-    %  
+    %
     
     properties
         H;
@@ -14,7 +14,7 @@ classdef LDPCCode < handle
         col_mat;
         row_mat;
         
-        Z; 
+        Z;
     end
     
     methods
@@ -42,8 +42,8 @@ classdef LDPCCode < handle
             obj.row_weight_vec = sum(obj.H, 2);
             obj.max_col_weight  = max(obj.col_weight_vec);
             obj.max_row_weight  = max(obj.row_weight_vec);
-            obj.col_mat = zeros(obj.N, obj.max_col_weight); 
-            obj.row_mat = zeros(obj.M, obj.max_row_weight); 
+            obj.col_mat = zeros(obj.N, obj.max_col_weight);
+            obj.row_mat = zeros(obj.M, obj.max_row_weight);
             for i_row = 1 : obj.M
                 index = 1;
                 for i_col = 1 : obj.N
@@ -67,114 +67,145 @@ classdef LDPCCode < handle
         end
         
         function [codeword] = encode_bits(obj, info_bits)
-           % Does encoding by back substitution
-           % Assumes a very specific structure on the partiy check matrix
-           codeword = zeros(obj.N, 1);
-           codeword(1:obj.K) = info_bits;
-           
-           parity = zeros(obj.M, 1);
-           for i_row = 1 : obj.M
-               for i_col = 1 : obj.max_row_weight
-                   if (obj.row_mat(i_row, i_col) > 0) && (obj.row_mat(i_row, i_col) <= obj.K)
-                       parity(i_row) = parity(i_row) + codeword(obj.row_mat(i_row, i_col));
-                   end
-               end
-           end
-           
-           parity = mod(parity, 2);
-
-           for i = 1 : obj.Z
-               codeword(obj.K + i) = mod(sum(parity(i:obj.Z:end)), 2);
-           end
-           
-           for i_row = 1 : obj.M
-               for i_col = 1 : obj.max_row_weight
-                   if (obj.row_mat(i_row, i_col) > obj.K) && (obj.row_mat(i_row, i_col) <= obj.K + obj.Z)
-                       parity(i_row) = mod(parity(i_row) + codeword(obj.row_mat(i_row, i_col)), 2);
-                   end
-               end
-           end
-           
-           for i_col = obj.K + obj.Z + 1 : obj.Z: obj.N
+            % Does encoding by back substitution
+            % Assumes a very specific structure on the partiy check matrix
+            codeword = zeros(obj.N, 1);
+            codeword(1:obj.K) = info_bits;
+            
+            
+            parity = obj.H * codeword;
+            % parity = mod(parity, 2);
+            
+            for i = 1 : obj.Z
+                codeword(obj.K + i) = mod(sum(parity(i:obj.Z:end)), 2);
+            end
+            
+            H_part2 = obj.H(:, obj.K+1:obj.K+obj.Z);
+            codeword_part2 = codeword(obj.K+1:obj.K+obj.Z);
+            parity = mod(parity + H_part2 * codeword_part2(:), 2);
+            
+            for i_col = obj.K + obj.Z + 1 : obj.Z: obj.N
                 codeword(i_col: i_col + obj.Z - 1) = parity(i_col -  obj.K - obj.Z : i_col - obj.K - 1);
                 parity(i_col -  obj.K : i_col - obj.K + obj.Z - 1) = mod(parity(i_col -  obj.K - obj.Z : i_col - obj.K - 1) + ...
                     parity(i_col -  obj.K : i_col + obj.Z - obj.K - 1), 2);
-           end
-           
+            end
+            
+            %            parity = zeros(obj.M, 1);
+            %            for i_row = 1 : obj.M
+            %                for i_col = 1 : obj.max_row_weight
+            %                    if (obj.row_mat(i_row, i_col) > 0) && (obj.row_mat(i_row, i_col) <= obj.K)
+            %                        parity(i_row) = parity(i_row) + codeword(obj.row_mat(i_row, i_col));
+            %                    end
+            %                end
+            %            end
+            %
+            %            parity = mod(parity, 2);
+            %
+            %            for i = 1 : obj.Z
+            %                codeword(obj.K + i) = mod(sum(parity(i:obj.Z:end)), 2);
+            %            end
+            %
+            %            for i_row = 1 : obj.M
+            %                for i_col = 1 : obj.max_row_weight
+            %                    if (obj.row_mat(i_row, i_col) > obj.K) && (obj.row_mat(i_row, i_col) <= obj.K + obj.Z)
+            %                        parity(i_row) = mod(parity(i_row) + codeword(obj.row_mat(i_row, i_col)), 2);
+            %                    end
+            %                end
+            %            end
+            %
+            %            for i_col = obj.K + obj.Z + 1 : obj.Z: obj.N
+            %                 codeword(i_col: i_col + obj.Z - 1) = parity(i_col -  obj.K - obj.Z : i_col - obj.K - 1);
+            %                 parity(i_col -  obj.K : i_col - obj.K + obj.Z - 1) = mod(parity(i_col -  obj.K - obj.Z : i_col - obj.K - 1) + ...
+            %                     parity(i_col -  obj.K : i_col + obj.Z - obj.K - 1), 2);
+            %            end
+            
         end
         
         function [decoded_codeword, error_vec] = decode_llr(obj, input_llr_vec, max_iter, min_sum)
-            eta = zeros(obj.M, obj.N);
-            lasteta = zeros(obj.M, obj.N);
+            error_vec = 0;
             updated_llr_vec = input_llr_vec;
-            error_vec = zeros(max_iter, 1);
-            for iter = 1 : max_iter
-
-                for i_m = 1 : obj.M
-                    for i_n1 = 1 : obj.row_weight_vec(i_m) 
-                        n1 = obj.row_mat(i_m, i_n1);
-                        if min_sum
+            if min_sum
+                eta = zeros(obj.M, obj.N);
+                lasteta = zeros(obj.M, obj.N);                
+                for iter = 1 : max_iter
+                    for i_m = 1 : obj.M
+                        for i_n1 = 1 : obj.row_weight_vec(i_m)
+                            n1 = obj.row_mat(i_m, i_n1);
                             pr = 100;
-                        else
-                            pr = 1;
-                        end
-                        for  i_n2 = 1 : obj.row_weight_vec(i_m)
-                            if i_n1 == i_n2
-                                continue;
-                            end
-                            n2 = obj.row_mat(i_m, i_n2);
-                            l1 = (updated_llr_vec(n2) - lasteta(i_m, n2));
-                            l1 = min(l1, 20);
-                            l1 = max(l1, -20);
-                            if min_sum
+                            for  i_n2 = 1 : obj.row_weight_vec(i_m)
+                                if i_n1 == i_n2
+                                    continue;
+                                end
+                                n2 = obj.row_mat(i_m, i_n2);
+                                l1 = (updated_llr_vec(n2) - lasteta(i_m, n2));
+                                l1 = min(l1, 20);
+                                l1 = max(l1, -20);
                                 pr = sign(pr) * sign(l1) * min(abs(l1), abs(pr));
-                            else
-                                pr = pr * tanh(l1/2);
                             end
+                            eta(i_m, n1) = pr;
                         end
-                        if min_sum
-                             eta(i_m, n1) = pr; 
-                        else
-                            eta(i_m, n1) = 2 * atanh(pr);
-                        end
-
                     end
-                 end
-                 
-                 lasteta = eta;
-                 
-                 for i_n = 1 : obj.N
-                     updated_llr_vec(i_n) = input_llr_vec(i_n);
-                     for i_m = 1 : obj.col_weight_vec(i_n)
-                         m = obj.col_mat(i_n, i_m);
-                         updated_llr_vec(i_n) = updated_llr_vec(i_n) + eta(m,i_n);
-                     end
-                 end
-                 
-                 decoded_codeword = (updated_llr_vec < 0);
-                 if obj.check_codeword(decoded_codeword)
-                      return;
-                 else
-                     error_vec(iter) = 1;
-                 end
+                    
+                    lasteta = eta;
+                    
+                    for i_n = 1 : obj.N
+                        updated_llr_vec(i_n) = input_llr_vec(i_n);
+                        for i_m = 1 : obj.col_weight_vec(i_n)
+                            m = obj.col_mat(i_n, i_m);
+                            updated_llr_vec(i_n) = updated_llr_vec(i_n) + eta(m,i_n);
+                        end
+                    end
+                    
+                    decoded_codeword = (updated_llr_vec < 0);
+                    if obj.check_codeword(decoded_codeword)
+                        error_vec = 0;
+                        return;
+                    else
+                        error_vec = 1;
+                    end
+                end
+            else  % my decoding codes
+                tH = sparse(obj.H);
+                lasteta_s = tH*0;
+                saturatedBound = 20;
+                n = obj.N;
+                m = obj.M;
+                for iter = 1 : max_iter
+                    H_blf = tH * spdiags(updated_llr_vec, 0, n, n) - lasteta_s;
+                    H_blf = min(max(H_blf, -saturatedBound), saturatedBound); % bound above and below
+                    r = tanh(H_blf/2);
+                    r_prod = full(real(exp(sum(spfun('log',r),2)))); % magic step, use log to compute product
+                    pr = spdiags(r_prod, 0, m, m) * real(spfun('exp', -spfun('log',r))); % crying... I could not find a proper function to compute reciprocal
+                    eta = 2 * atanh(pr);
+                    lasteta_s = eta;
+                    updated_llr_vec = input_llr_vec + sum(eta).';
+                    
+                    decoded_codeword = (updated_llr_vec < 0);
+                    if ~nnz(obj.H * decoded_codeword)
+                        error_vec = 0;
+                        return;
+                    else
+                        error_vec = 1;
+                    end
+                end
             end
-           
+            
         end
         
         function [b] = check_codeword(obj, x)
-           b = 1;
-           for i_check = 1 : obj.M
-               c = 0;
-               for i_n = 1  : obj.row_weight_vec(i_check)
-                   c = c + x(obj.row_mat(i_check, i_n));
-               end
-               if mod(c, 2) == 1
-                   b = 0;
-                   break;
-               end                
-           end
+            b = 1;
+            for i_check = 1 : obj.M
+                c = 0;
+                for i_n = 1  : obj.row_weight_vec(i_check)
+                    c = c + x(obj.row_mat(i_check, i_n));
+                end
+                if mod(c, 2) == 1
+                    b = 0;
+                    break;
+                end
+            end
         end
-                
+        
         
         function lifted_ldpc(obj, baseH, Z)
             circ_mat_array = {};
@@ -205,7 +236,7 @@ classdef LDPCCode < handle
         
         
         function load_wifi_ldpc(obj, block_length, rate)
-
+            
             H_1296_1_2 = [40 -1 -1 -1 22 -1 49 23 43 -1 -1 -1 1 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1;
                 50 1 -1 -1 48 35 -1 -1 13 -1 30 -1 -1 0 0 -1 -1 -1 -1 -1 -1 -1 -1 -1;
                 39 50 -1 -1 4 -1 2 -1 -1 -1 -1 49 -1 -1 0 0 -1 -1 -1 -1 -1 -1 -1 -1;
@@ -272,7 +303,7 @@ classdef LDPCCode < handle
             
             
             H_1944_5_6 = ...
-              [ 13 48 80 66 4 74 7 30 76 52 37 60 -1 49 73 31 74 73 23 -1 1 0 -1 -1;
+                [ 13 48 80 66 4 74 7 30 76 52 37 60 -1 49 73 31 74 73 23 -1 1 0 -1 -1;
                 69 63 74 56 64 77 57 65 6 16 51 -1 64 -1 68 9 48 62 54 27 -1 0 0 -1;
                 51 15 0 80 24 25 42 54 44 71 71 9 67 35 -1 58 -1 29 -1 53 0 -1 0 0;
                 16 29 36 41 44 56 59 37 50 24 -1 65 4 65 52 -1 4 -1 73 52 1 -1 -1 0];
@@ -338,9 +369,9 @@ classdef LDPCCode < handle
             end
             
             baseH = eval(H_var);
-                
+            
             obj.lifted_ldpc(baseH, obj.Z);
-
+            
         end
         
     end
