@@ -34,7 +34,7 @@ The results are using LdpcC code, and are based on 50K runs.
 Runtime performance C and MATLAB
 -----
 
-The run time comparison is as follows (run on a single macbook pro 2015):
+The run time comparison is as follows (run on a single macbook pro 2015)[This part may need changing]:
 <table>
 <caption> Comparison of number of runs per second </caption>
   <tr align="center">
@@ -65,6 +65,20 @@ The run time comparison is as follows (run on a single macbook pro 2015):
 
 The above numbers are based on 20 iterations of the BP decoder *without* early termination. So, typically, one should see much better performance.
 
+For the improved matlab version EnDec BP algorithm(use matrix multiplication rather than for loop, there is a tremendous performance improvement) 
+<table>
+<caption> Comparison of number of running time for 100 iterations </caption>
+ <tr align="center">
+    <th>Org Codes(sec) </th>
+    <th>New Codes(sec)</th>
+    <th>Speedup org/new</th>
+  </tr>
+ <tr align="center">
+    <td>236.7094</td>
+    <td>30.8783</td>
+    <td>x7.67</td>
+  </tr>
+</table>
 Code Interface
 ------
 
